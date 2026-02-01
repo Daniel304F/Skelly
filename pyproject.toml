@@ -1,0 +1,18 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "skelly"
+version = "0.1.0"
+description = "Ein CLI-Tool für Architektur-Scaffolding"
+authors = [{ name = "Daniel", email = "daniel-fischer304@tutanota.de" }]
+dependencies = [
+    "questionary",
+    "jinja2",
+    "rich"
+]
+requires-python = ">=3.10"
+
+[project.scripts]
+skelly = "skelly.cli:main"

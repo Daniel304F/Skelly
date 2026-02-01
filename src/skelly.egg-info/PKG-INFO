@@ -1,0 +1,11 @@
+Metadata-Version: 2.4
+Name: skelly
+Version: 0.1.0
+Summary: Ein CLI-Tool für Architektur-Scaffolding
+Author-email: Daniel <daniel-fischer304@tutanota.de>
+Requires-Python: >=3.10
+License-File: LICENSE
+Requires-Dist: questionary
+Requires-Dist: jinja2
+Requires-Dist: rich
+Dynamic: license-file

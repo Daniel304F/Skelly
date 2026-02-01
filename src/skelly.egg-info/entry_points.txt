@@ -1,0 +1,2 @@
+[console_scripts]
+skelly = skelly.cli:main
