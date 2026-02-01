@@ -1,6 +1,7 @@
 from typing import Optional
 
 from skelly.core.models import ProjectConfig
+from skelly.strategies.base import ArchitectureStrategy
 
 
 class ProjectBuilder:
@@ -31,7 +32,13 @@ class ProjectBuilder:
             self.config.libraries.append(library)
         return self
     
-    def build(self) -> Optional[ProjectConfig]:
+    def build(self, strategy: ArchitectureStrategy) -> ProjectConfig:
+        if not self.config:
+            raise ValueError("ProjectConfig is not initialized.")
+        
+        required_folders = strategy.get_required_folders() # depends on strategy
+
+        ## Here would be the logic to create folders and files based on the config and strategy
         print(self.config)
         return self.config
     

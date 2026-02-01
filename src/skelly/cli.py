@@ -17,4 +17,4 @@ def main() -> None:
     libraries = questionary.checkbox("Select libraries to include:", choices=["Auth", "Database", "Logging"]).ask()
 
     builder = ProjectBuilder()
-    builder.set_meta_data(project_name).set_frontend_stack(frontend_stack).set_backend_stack(backend_stack).set_architecture(architecture).build()
+    builder.set_meta_data(project_name).set_frontend_stack(frontend_stack).set_backend_stack(backend_stack).set_architecture(architecture).build(strategy=None)
