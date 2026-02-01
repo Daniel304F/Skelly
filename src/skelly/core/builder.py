@@ -32,6 +32,7 @@ class ProjectBuilder:
         return self
     
     def build(self) -> Optional[ProjectConfig]:
+        print(self.config)
         return self.config
     
     
