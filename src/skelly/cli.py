@@ -71,8 +71,6 @@ def main() -> None:
         console.print("[red]No valid strategy found via selection logic.[/red]")
         return
 
-    ## To-Do: Implement backend library selection based on chosen backend stack
-
     builder = ProjectBuilder()
     builder.set_meta_data(project_name)\
             .set_frontend_stack(frontend_stack)\
