@@ -7,6 +7,7 @@ class ProjectConfig:
     frontend_stack: str
     backend_stack: str
     architecture: Optional[str] = None
-    libraries: List[str] = field(default_factory=list)
+    frontend_libraries: List[str] = field(default_factory=list)
+    backend_libraries: List[str] = field(default_factory=list)
     output_path: str = "./"
 
