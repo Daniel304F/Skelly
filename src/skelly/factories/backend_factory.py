@@ -15,7 +15,8 @@ class BackendFactory:
             "Morgan (Logging)",
             "Cors (Cross-Origin Resource Sharing)",
             "Dotenv (Environment Variables)",
-            "Joi / Zod (Validation)",
+            "Joi (Validation)",
+            "Zod (Validation)",
             "Mongoose (MongoDB ODM)"
         ],
         "Django": [
