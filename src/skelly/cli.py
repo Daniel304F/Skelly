@@ -7,7 +7,6 @@ from skelly.factories.backend_factory import BackendFactory
 from skelly.strategies.custom import CustomStrategy
 from skelly.strategies.django import DjangoStandardStrategy
 from skelly.strategies.express import ExpressStandardStrategy
-from skelly.strategies.hexagonal import HexagonalStrategy
 from skelly.strategies.java import JavaHexagonalStrategy
 
 console = Console()

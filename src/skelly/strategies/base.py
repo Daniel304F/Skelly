@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 from typing import List
+from skelly.core.models import ProjectConfig
 
 class ArchitectureStrategy(ABC):
     @abstractmethod
@@ -9,4 +10,11 @@ class ArchitectureStrategy(ABC):
 
     @abstractmethod
     def get_architecture_name(self) -> str:
+        pass
+
+    @abstractmethod
+    def initialize_project(self, config: ProjectConfig, base_path: str) -> None:
+        """
+        Creates configuration files (package.json, pom.xml) and installs dependencies.
+        """
         pass
