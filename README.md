@@ -4,7 +4,7 @@ A smart scaffolding CLI that generates modular project structures. Choose your f
 
 ## Projektstruktur
 
-´´´
+```
 skelly/
 ├── src/
 │ └── skelly/
@@ -32,4 +32,4 @@ skelly/
 │
 ├── tests/ # Unit- & Integrationtests
 └── pyproject.toml
-´´´
+```
