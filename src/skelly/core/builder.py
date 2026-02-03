@@ -27,18 +27,28 @@ class ProjectBuilder:
             self.config.architecture = architecture
         return self
     
-    def add_library(self, library: str):
-        if self.config:
-            self.config.libraries.append(library)
-        return self
+    def add_frontend_libraries(self, libraries: list[str]):
+            if self.config:
+                self.config.frontend_libraries.extend(libraries)
+            return self
+
+    def add_backend_libraries(self, libraries: list[str]):
+            if self.config:
+                self.config.backend_libraries.extend(libraries)
+            return self
     
     def build(self, strategy: ArchitectureStrategy) -> ProjectConfig:
         if not self.config:
             raise ValueError("ProjectConfig is not initialized.")
         
-        required_folders = strategy.get_required_folders() # depends on strategy
+        required_folders = strategy.get_required_folders() 
 
-        ## Here would be the logic to create folders and files based on the config and strategy
+        print(f"Building project '{self.config.name}' with {strategy.get_architecture_name()}...")
+        print(f"Creating folders: {required_folders}")
+
+        ## To-Do: Implement actual file system operations to create project structure
+
+
         print(self.config)
         return self.config
     
