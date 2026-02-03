@@ -47,7 +47,7 @@ class ProjectBuilder:
         print(f"Creating folders: {required_folders}")
 
         ## To-Do: Implement actual file system operations to create project structure
-
+        
 
         print(self.config)
         return self.config

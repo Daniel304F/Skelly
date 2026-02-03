@@ -4,7 +4,11 @@ from rich.console import Console
 from skelly.core.builder import ProjectBuilder
 from skelly.factories.frontend_factory import FrontendFactory
 from skelly.factories.backend_factory import BackendFactory
+from skelly.strategies.custom import CustomStrategy
+from skelly.strategies.django import DjangoStandardStrategy
+from skelly.strategies.express import ExpressStandardStrategy
 from skelly.strategies.hexagonal import HexagonalStrategy
+from skelly.strategies.java import JavaHexagonalStrategy
 
 console = Console()
 
@@ -30,26 +34,42 @@ def main() -> None:
 
 ## Basic selection for archticture and strategy
     strategy = None # For now none
-    architecture_choice = "custom"
+    arch_options = ["Custom Structure"]
+        
+    if backend_stack == "Java":
+            arch_options.insert(0, "Hexagonal Architecture")
+    elif backend_stack == "Express":
+            arch_options.insert(0, "Standard Express (Layered)")
+    elif backend_stack == "Django":
+            arch_options.insert(0, "Django Default")
 
-    if backend_stack in ["Java", "Express"]:
-        architecture_choice = questionary.select(
-            "Choose a strategy:",
-            choices=["custom", "hexagonal"]
-        ).ask()
+    architecture_choice = questionary.select(
+        f"Choose an architecture strategy for backend: {backend_stack}",
+        choices=arch_options
+    ).ask()
 
-        if architecture_choice == "hexagonal":
-            strategy = HexagonalStrategy()
-        if architecture_choice == "custom":
-            strategy = None  # Custom strategy to be implemented
+    if architecture_choice == "Custom Structure":
+            console.print("[yellow]Please enter folder paths separated by commas.[/yellow]")
+            console.print("[dim]Example: src/controllers, src/models, utils[/dim]")
+            
+            folders_input = questionary.text("Enter folders:").ask()
+            
+            folder_list = [f.strip() for f in folders_input.split(",") if f.strip()]
+            strategy = CustomStrategy(folder_list)
+
+    elif architecture_choice == "Hexagonal Architecture" and backend_stack == "Java":
+        strategy = JavaHexagonalStrategy(project_name)
+
+    elif architecture_choice == "Standard Express (Layered)" and backend_stack == "Express":
+        strategy = ExpressStandardStrategy()
+
+    elif architecture_choice == "Django Default" and backend_stack == "Django":
+        strategy = DjangoStandardStrategy(project_name)
+    
     else:
-        console.print(f"[dim]Using standard structure for {backend_stack}[/dim]")
-        strategy = None # StandardStrategy() Must be implemented
-
-
-    architecture = questionary.select("Choose an architecture:", choices=["", "hexagonal"]).ask()
-
-    ## Choosen frontend libraries depending on selected frontend stack
+        # fallback
+        console.print("[red]No valid strategy found via selection logic.[/red]")
+        return
 
     ## To-Do: Implement backend library selection based on chosen backend stack
 
@@ -57,7 +77,7 @@ def main() -> None:
     builder.set_meta_data(project_name)\
             .set_frontend_stack(frontend_stack)\
             .set_backend_stack(backend_stack)\
-            .set_architecture(architecture)\
+            .set_architecture(strategy.get_architecture_name())\
             .add_frontend_libraries(frontend_libs)\
             .add_backend_libraries(backend_libs)
     
