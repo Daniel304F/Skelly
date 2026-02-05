@@ -17,7 +17,9 @@ class HexagonalArchitecture(ArchitectureStrategy):
         base = self.base_package
 
         if self.base_package == "java":
-            base = f"src/main/java/com/example/{self.project_name}"
+            base = f"server/src/main/java/com/example/{self.project_name}"
+        else:
+            base = f"server/{self.base_package}"
 
         return [
             f"{base}/domain/model",

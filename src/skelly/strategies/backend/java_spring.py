@@ -13,7 +13,7 @@ class JavaSpringBackend(BackendStrategy):
         self.project_name = project_name.lower().replace(" ", "")
 
     def get_folders(self) -> List[str]:
-        return ["src/main/resources"]
+        return ["server/src/main/resources"]
 
     def get_name(self) -> str:
         return "Java Spring Boot"
@@ -95,18 +95,20 @@ class JavaSpringBackend(BackendStrategy):
     </build>
 </project>
 """
-        pom_path = base_path / "pom.xml"
+        server_path = base_path / "server"
+        pom_path = server_path / "pom.xml"
         with open(pom_path, "w") as f:
             f.write(pom_content.strip())
 
-        print("[cyan]Created pom.xml[/cyan]")
+        print("[cyan]Created server/pom.xml[/cyan]")
 
     def install_dependencies(self, base_path: Path) -> None:
+        server_path = base_path / "server"
         print("[yellow]Running mvn install...[/yellow]")
         try:
             subprocess.run(
                 ["mvn", "install", "-DskipTests"],
-                cwd=base_path,
+                cwd=server_path,
                 shell=True,
                 check=True
             )

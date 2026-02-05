@@ -13,7 +13,7 @@ class LayeredArchitecture(ArchitectureStrategy):
         self.base_path = base_path
 
     def get_folders(self) -> List[str]:
-        base = self.base_path
+        base = f"server/{self.base_path}"
         return [
             f"{base}/api/routes",
             f"{base}/api/controllers",
