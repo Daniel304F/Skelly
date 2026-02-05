@@ -6,7 +6,11 @@ from skelly.strategies.base import ArchitectureStrategy
 class HexagonalArchitecture(ArchitectureStrategy):
     """
     Hexagonal Architecture (Ports and Adapters).
-    Supports multiple backends: Java, TypeScript/Node, etc.
+
+    Structure based on inbound/domain/outbound separation:
+    - inbound: DTOs, RestController, MessageConsumer, Security
+    - domain: Entity, Service, Repository Interface, Client Interface, MessageProducer Interface
+    - outbound: JpaRepositoryImpl, RestClientImpl, MessageProducerImpl
     """
 
     def __init__(self, project_name: str, base_package: str = "src"):
@@ -14,22 +18,32 @@ class HexagonalArchitecture(ArchitectureStrategy):
         self.base_package = base_package
 
     def get_folders(self) -> List[str]:
-        base = self.base_package
-
         if self.base_package == "java":
             base = f"server/src/main/java/com/example/{self.project_name}"
         else:
             base = f"server/{self.base_package}"
 
         return [
+            # === INBOUND (Driving Adapters) ===
+            f"{base}/inbound/dto",
+            f"{base}/inbound/rest",
+            f"{base}/inbound/messaging",
+            f"{base}/inbound/security",
+
+            # === DOMAIN (Core Business Logic) ===
             f"{base}/domain/model",
             f"{base}/domain/service",
-            f"{base}/application/port/in",
-            f"{base}/application/port/out",
-            f"{base}/application/service",
-            f"{base}/adapter/in/web",
-            f"{base}/adapter/out/persistence",
-            f"{base}/infrastructure/config"
+            f"{base}/domain/repository",      # Repository interfaces
+            f"{base}/domain/client",          # External service client interfaces
+            f"{base}/domain/messaging",       # MessageProducer interfaces
+
+            # === OUTBOUND (Driven Adapters) ===
+            f"{base}/outbound/persistence",   # JPA Repository implementations
+            f"{base}/outbound/restclient",    # HTTP client implementations
+            f"{base}/outbound/messaging",     # RabbitMQ/Kafka implementations
+
+            # === CONFIG ===
+            f"{base}/config",
         ]
 
     def get_name(self) -> str:
