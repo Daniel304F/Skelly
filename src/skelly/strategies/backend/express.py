@@ -45,21 +45,26 @@ class ExpressBackend(BackendStrategy):
 
         print(f"[cyan]Created server/package.json with dependencies: {', '.join(dependencies.keys())}[/cyan]")
 
-        # Generate example code for hexagonal architecture
         if config.architecture == "Hexagonal Architecture":
             self._generate_hexagonal_example(config, base_path)
 
     def _generate_hexagonal_example(self, config: ProjectConfig, base_path: Path) -> None:
-        """Generate example code demonstrating hexagonal architecture layers."""
+        """Generate example code with inbound/domain/outbound structure."""
         server_path = base_path / "server"
 
-        print("[cyan]Generating hexagonal architecture example code...[/cyan]")
+        print("[cyan]Generating hexagonal architecture example (inbound/domain/outbound)...[/cyan]")
 
-        # === DOMAIN LAYER ===
+        # ╔═══════════════════════════════════════════════════════════════╗
+        # ║                     DOMAIN LAYER                              ║
+        # ╚═══════════════════════════════════════════════════════════════╝
 
-        # Domain Model: Example Entity
+        # Domain Model: Entity
         entity_code = '''import { randomUUID } from 'crypto';
 
+/**
+ * Domain Entity - Core business object.
+ * Contains business logic and is independent of infrastructure.
+ */
 export class Example {
   constructor(id, name, description) {
     this.id = id;
@@ -71,133 +76,136 @@ export class Example {
     return new Example(randomUUID(), name, description);
   }
 
-  update(name, description) {
+  updateDetails(name, description) {
     this.name = name;
     this.description = description;
   }
 }
 '''
         self._write_file(server_path, "src/domain/model/Example.js", entity_code)
+        self._write_file(server_path, "src/domain/model/index.js", "export { Example } from './Example.js';\n")
 
-        # Domain Model index
-        domain_model_index = '''export { Example } from './Example.js';
-'''
-        self._write_file(server_path, "src/domain/model/index.js", domain_model_index)
+        # Domain Service
+        domain_service_code = '''import { Example } from '../model/index.js';
 
-        # === APPLICATION LAYER - PORTS ===
-
-        # Input Port: GetExampleUseCase
-        get_usecase_code = '''/**
- * Input Port: Query use cases for Example
- * @interface GetExampleUseCase
+/**
+ * Domain Service - Contains business logic.
+ * Uses repository interfaces (ports) for data access.
  */
-export class GetExampleUseCase {
+export class ExampleService {
   constructor(exampleRepository) {
     this.exampleRepository = exampleRepository;
   }
 
-  async getById(id) {
+  async createExample(name, description) {
+    const example = Example.create(name, description);
+    return this.exampleRepository.save(example);
+  }
+
+  async findById(id) {
     return this.exampleRepository.findById(id);
   }
 
-  async getAll() {
+  async findAll() {
     return this.exampleRepository.findAll();
   }
-}
-'''
-        self._write_file(server_path, "src/application/port/in/GetExampleUseCase.js", get_usecase_code)
 
-        # Input Port: CreateExampleUseCase
-        create_usecase_code = '''import { Example } from '../../../domain/model/index.js';
-
-/**
- * Input Port: Command use cases for Example
- * @interface CreateExampleUseCase
- */
-export class CreateExampleUseCase {
-  constructor(exampleRepository) {
-    this.exampleRepository = exampleRepository;
-  }
-
-  async create(command) {
-    const example = Example.create(command.name, command.description);
-    return this.exampleRepository.save(example);
+  async deleteById(id) {
+    return this.exampleRepository.deleteById(id);
   }
 }
 '''
-        self._write_file(server_path, "src/application/port/in/CreateExampleUseCase.js", create_usecase_code)
+        self._write_file(server_path, "src/domain/service/ExampleService.js", domain_service_code)
+        self._write_file(server_path, "src/domain/service/index.js", "export { ExampleService } from './ExampleService.js';\n")
 
-        # Port index
-        port_in_index = '''export { GetExampleUseCase } from './GetExampleUseCase.js';
-export { CreateExampleUseCase } from './CreateExampleUseCase.js';
-'''
-        self._write_file(server_path, "src/application/port/in/index.js", port_in_index)
-
-        # Output Port: ExampleRepository (Interface documentation)
-        repository_port_code = '''/**
- * Output Port: Repository interface for Example persistence
+        # Domain Repository Interface (Port)
+        repository_interface_code = '''/**
+ * Repository Interface (Port) - Defines data access contract.
+ * Implementation is in outbound/persistence layer.
  *
- * Implementations must provide:
- * - save(example): Promise<Example>
- * - findById(id): Promise<Example|null>
- * - findAll(): Promise<Example[]>
- * - deleteById(id): Promise<void>
+ * @interface ExampleRepository
+ * @method save(example) - Promise<Example>
+ * @method findById(id) - Promise<Example|null>
+ * @method findAll() - Promise<Example[]>
+ * @method deleteById(id) - Promise<void>
  */
-export const ExampleRepositoryPort = {
+export const ExampleRepository = {
   save: async (example) => { throw new Error('Not implemented'); },
   findById: async (id) => { throw new Error('Not implemented'); },
   findAll: async () => { throw new Error('Not implemented'); },
   deleteById: async (id) => { throw new Error('Not implemented'); },
 };
 '''
-        self._write_file(server_path, "src/application/port/out/ExampleRepository.js", repository_port_code)
+        self._write_file(server_path, "src/domain/repository/ExampleRepository.js", repository_interface_code)
+        self._write_file(server_path, "src/domain/repository/index.js", "export { ExampleRepository } from './ExampleRepository.js';\n")
 
-        port_out_index = '''export { ExampleRepositoryPort } from './ExampleRepository.js';
+        # Domain Client Interface (Port for external services)
+        client_interface_code = '''/**
+ * Service Client Interface (Port) - For calling external web services.
+ * Implementation is in outbound/restclient layer.
+ *
+ * @interface ExternalServiceClient
+ * @method fetchExternalData(resourceId) - Promise<Object|null>
+ * @method notifyExternalService(eventType, payload) - Promise<void>
+ */
+export const ExternalServiceClient = {
+  fetchExternalData: async (resourceId) => { throw new Error('Not implemented'); },
+  notifyExternalService: async (eventType, payload) => { throw new Error('Not implemented'); },
+};
 '''
-        self._write_file(server_path, "src/application/port/out/index.js", port_out_index)
+        self._write_file(server_path, "src/domain/client/ExternalServiceClient.js", client_interface_code)
+        self._write_file(server_path, "src/domain/client/index.js", "export { ExternalServiceClient } from './ExternalServiceClient.js';\n")
 
-        # === APPLICATION LAYER - SERVICE ===
+        # Domain MessageProducer Interface (Port)
+        message_producer_interface_code = '''/**
+ * Message Producer Interface (Port) - For publishing events.
+ * Implementation is in outbound/messaging layer (e.g., RabbitMQ).
+ *
+ * @interface ExampleEventProducer
+ * @method publishExampleCreated(exampleId, name) - Promise<void>
+ * @method publishExampleDeleted(exampleId) - Promise<void>
+ */
+export const ExampleEventProducer = {
+  publishExampleCreated: async (exampleId, name) => { throw new Error('Not implemented'); },
+  publishExampleDeleted: async (exampleId) => { throw new Error('Not implemented'); },
+};
+'''
+        self._write_file(server_path, "src/domain/messaging/ExampleEventProducer.js", message_producer_interface_code)
+        self._write_file(server_path, "src/domain/messaging/index.js", "export { ExampleEventProducer } from './ExampleEventProducer.js';\n")
 
-        # Application Service
-        app_service_code = '''import { GetExampleUseCase, CreateExampleUseCase } from '../port/in/index.js';
+        # ╔═══════════════════════════════════════════════════════════════╗
+        # ║                    INBOUND LAYER                              ║
+        # ╚═══════════════════════════════════════════════════════════════╝
+
+        # Inbound DTOs
+        dto_code = '''/**
+ * Request DTO - Data transfer object for incoming requests.
+ */
+export function createExampleRequest(name, description) {
+  return { name, description };
+}
 
 /**
- * Application Service: Orchestrates use cases
- * Combines multiple use case implementations
+ * Response DTO - Data transfer object for outgoing responses.
  */
-export class ExampleService {
-  constructor(exampleRepository) {
-    this.getExampleUseCase = new GetExampleUseCase(exampleRepository);
-    this.createExampleUseCase = new CreateExampleUseCase(exampleRepository);
-  }
-
-  async getById(id) {
-    return this.getExampleUseCase.getById(id);
-  }
-
-  async getAll() {
-    return this.getExampleUseCase.getAll();
-  }
-
-  async create(command) {
-    return this.createExampleUseCase.create(command);
-  }
+export function toExampleResponse(example) {
+  return {
+    id: example.id,
+    name: example.name,
+    description: example.description,
+  };
 }
 '''
-        self._write_file(server_path, "src/application/service/ExampleService.js", app_service_code)
+        self._write_file(server_path, "src/inbound/dto/ExampleDto.js", dto_code)
+        self._write_file(server_path, "src/inbound/dto/index.js", "export { createExampleRequest, toExampleResponse } from './ExampleDto.js';\n")
 
-        service_index = '''export { ExampleService } from './ExampleService.js';
-'''
-        self._write_file(server_path, "src/application/service/index.js", service_index)
-
-        # === ADAPTER LAYER - WEB (INPUT) ===
-
-        # REST Controller
+        # Inbound REST Controller
         controller_code = '''import { Router } from 'express';
+import { toExampleResponse } from '../dto/index.js';
 
 /**
- * Input Adapter: REST Controller for Example
- * Handles HTTP requests and delegates to use cases
+ * REST Controller (Inbound Adapter) - Handles HTTP requests.
+ * Converts DTOs to domain objects and delegates to domain service.
  */
 export function createExampleController(exampleService) {
   const router = Router();
@@ -205,8 +213,8 @@ export function createExampleController(exampleService) {
   // GET /api/examples
   router.get('/', async (req, res, next) => {
     try {
-      const examples = await exampleService.getAll();
-      res.json(examples.map(toResponse));
+      const examples = await exampleService.findAll();
+      res.json(examples.map(toExampleResponse));
     } catch (error) {
       next(error);
     }
@@ -215,11 +223,11 @@ export function createExampleController(exampleService) {
   // GET /api/examples/:id
   router.get('/:id', async (req, res, next) => {
     try {
-      const example = await exampleService.getById(req.params.id);
+      const example = await exampleService.findById(req.params.id);
       if (!example) {
         return res.status(404).json({ error: 'Example not found' });
       }
-      res.json(toResponse(example));
+      res.json(toExampleResponse(example));
     } catch (error) {
       next(error);
     }
@@ -229,9 +237,18 @@ export function createExampleController(exampleService) {
   router.post('/', async (req, res, next) => {
     try {
       const { name, description } = req.body;
-      const command = { name, description };
-      const created = await exampleService.create(command);
-      res.status(201).json(toResponse(created));
+      const created = await exampleService.createExample(name, description);
+      res.status(201).json(toExampleResponse(created));
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  // DELETE /api/examples/:id
+  router.delete('/:id', async (req, res, next) => {
+    try {
+      await exampleService.deleteById(req.params.id);
+      res.status(204).send();
     } catch (error) {
       next(error);
     }
@@ -239,33 +256,101 @@ export function createExampleController(exampleService) {
 
   return router;
 }
+'''
+        self._write_file(server_path, "src/inbound/rest/ExampleController.js", controller_code)
+        self._write_file(server_path, "src/inbound/rest/index.js", "export { createExampleController } from './ExampleController.js';\n")
 
-// DTO transformation
-function toResponse(example) {
-  return {
-    id: example.id,
-    name: example.name,
-    description: example.description,
+        # Inbound Message Consumer
+        message_consumer_code = '''/**
+ * Message Consumer (Inbound Adapter) - Handles incoming messages.
+ * Example: RabbitMQ with amqplib or Kafka with kafkajs
+ */
+export class ExampleMessageConsumer {
+  constructor(exampleService) {
+    this.exampleService = exampleService;
+  }
+
+  /**
+   * Handle incoming message from queue
+   * @param {string} message - Raw message from broker
+   */
+  async handleMessage(message) {
+    try {
+      const event = JSON.parse(message);
+      console.log('Received event:', event);
+
+      // Delegate to domain service based on event type
+      switch (event.type) {
+        case 'CREATE_EXAMPLE':
+          await this.exampleService.createExample(event.name, event.description);
+          break;
+        case 'DELETE_EXAMPLE':
+          await this.exampleService.deleteById(event.id);
+          break;
+        default:
+          console.warn('Unknown event type:', event.type);
+      }
+    } catch (error) {
+      console.error('Error processing message:', error);
+    }
+  }
+}
+'''
+        self._write_file(server_path, "src/inbound/messaging/ExampleMessageConsumer.js", message_consumer_code)
+        self._write_file(server_path, "src/inbound/messaging/index.js", "export { ExampleMessageConsumer } from './ExampleMessageConsumer.js';\n")
+
+        # Inbound Security Middleware
+        security_code = '''/**
+ * Security Middleware (Inbound) - Authentication and authorization.
+ * Example: JWT validation, API key check, etc.
+ */
+
+/**
+ * Authentication middleware - validates JWT token
+ */
+export function authMiddleware(req, res, next) {
+  const authHeader = req.headers.authorization;
+
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return res.status(401).json({ error: 'No token provided' });
+  }
+
+  const token = authHeader.substring(7);
+
+  // TODO: Validate JWT token
+  // const decoded = jwt.verify(token, process.env.JWT_SECRET);
+  // req.user = decoded;
+
+  next();
+}
+
+/**
+ * Authorization middleware - checks user roles
+ */
+export function requireRole(...roles) {
+  return (req, res, next) => {
+    // if (!req.user || !roles.includes(req.user.role)) {
+    //   return res.status(403).json({ error: 'Forbidden' });
+    // }
+    next();
   };
 }
 '''
-        self._write_file(server_path, "src/adapter/in/web/ExampleController.js", controller_code)
+        self._write_file(server_path, "src/inbound/security/authMiddleware.js", security_code)
+        self._write_file(server_path, "src/inbound/security/index.js", "export { authMiddleware, requireRole } from './authMiddleware.js';\n")
 
-        web_index = '''export { createExampleController } from './ExampleController.js';
-'''
-        self._write_file(server_path, "src/adapter/in/web/index.js", web_index)
+        # ╔═══════════════════════════════════════════════════════════════╗
+        # ║                   OUTBOUND LAYER                              ║
+        # ╚═══════════════════════════════════════════════════════════════╝
 
-        # === ADAPTER LAYER - PERSISTENCE (OUTPUT) ===
-
-        # In-Memory Repository Implementation
-        persistence_adapter_code = '''import { Example } from '../../../domain/model/index.js';
-
-/**
- * Output Adapter: In-Memory Repository
- * Implements ExampleRepository port
+        # Outbound Persistence: Repository Implementation
+        persistence_impl_code = '''/**
+ * Repository Implementation (Outbound Adapter) - In-Memory/Database persistence.
+ * Implements the domain repository interface.
  */
-export class ExamplePersistenceAdapter {
+export class ExampleRepositoryImpl {
   constructor() {
+    // In-memory storage (replace with database in production)
     this.storage = new Map();
   }
 
@@ -287,32 +372,137 @@ export class ExamplePersistenceAdapter {
   }
 }
 '''
-        self._write_file(server_path, "src/adapter/out/persistence/ExamplePersistenceAdapter.js", persistence_adapter_code)
+        self._write_file(server_path, "src/outbound/persistence/ExampleRepositoryImpl.js", persistence_impl_code)
+        self._write_file(server_path, "src/outbound/persistence/index.js", "export { ExampleRepositoryImpl } from './ExampleRepositoryImpl.js';\n")
 
-        persistence_index = '''export { ExamplePersistenceAdapter } from './ExamplePersistenceAdapter.js';
+        # Outbound REST Client: External Service Client Implementation
+        rest_client_impl_code = '''/**
+ * REST Client Implementation (Outbound Adapter) - Calls external web services.
+ * Implements the domain client interface.
+ */
+export class ExternalServiceClientImpl {
+  constructor(baseUrl = 'https://api.example.com') {
+    this.baseUrl = baseUrl;
+  }
+
+  async fetchExternalData(resourceId) {
+    try {
+      const response = await fetch(`${this.baseUrl}/resources/${resourceId}`);
+      if (!response.ok) return null;
+      return response.json();
+    } catch (error) {
+      console.error('Failed to fetch external data:', error);
+      return null;
+    }
+  }
+
+  async notifyExternalService(eventType, payload) {
+    try {
+      await fetch(`${this.baseUrl}/events`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ eventType, payload }),
+      });
+    } catch (error) {
+      console.error('Failed to notify external service:', error);
+    }
+  }
+}
 '''
-        self._write_file(server_path, "src/adapter/out/persistence/index.js", persistence_index)
+        self._write_file(server_path, "src/outbound/restclient/ExternalServiceClientImpl.js", rest_client_impl_code)
+        self._write_file(server_path, "src/outbound/restclient/index.js", "export { ExternalServiceClientImpl } from './ExternalServiceClientImpl.js';\n")
 
-        # === INFRASTRUCTURE ===
+        # Outbound Messaging: Message Producer Implementation
+        messaging_impl_code = '''/**
+ * Message Producer Implementation (Outbound Adapter) - Publishes events to message broker.
+ * Implements the domain messaging interface.
+ * Example: RabbitMQ with amqplib
+ */
+export class RabbitMQExampleProducer {
+  constructor(channel = null) {
+    this.channel = channel;
+    this.exchange = 'example.exchange';
+  }
+
+  async publishExampleCreated(exampleId, name) {
+    const message = JSON.stringify({
+      event: 'EXAMPLE_CREATED',
+      id: exampleId,
+      name: name,
+      timestamp: new Date().toISOString(),
+    });
+
+    // if (this.channel) {
+    //   this.channel.publish(this.exchange, 'example.created', Buffer.from(message));
+    // }
+    console.log('Published event:', message);
+  }
+
+  async publishExampleDeleted(exampleId) {
+    const message = JSON.stringify({
+      event: 'EXAMPLE_DELETED',
+      id: exampleId,
+      timestamp: new Date().toISOString(),
+    });
+
+    // if (this.channel) {
+    //   this.channel.publish(this.exchange, 'example.deleted', Buffer.from(message));
+    // }
+    console.log('Published event:', message);
+  }
+}
+'''
+        self._write_file(server_path, "src/outbound/messaging/RabbitMQExampleProducer.js", messaging_impl_code)
+        self._write_file(server_path, "src/outbound/messaging/index.js", "export { RabbitMQExampleProducer } from './RabbitMQExampleProducer.js';\n")
+
+        # ╔═══════════════════════════════════════════════════════════════╗
+        # ║                      CONFIG & MAIN                            ║
+        # ╚═══════════════════════════════════════════════════════════════╝
+
+        # Config
+        config_code = '''export const config = {
+  port: process.env.PORT || 3000,
+  nodeEnv: process.env.NODE_ENV || 'development',
+  // Add more configuration here
+};
+'''
+        self._write_file(server_path, "src/config/index.js", config_code)
 
         # Main Application Entry Point
         index_code = '''import express from 'express';
-import { ExampleService } from './application/service/index.js';
-import { ExamplePersistenceAdapter } from './adapter/out/persistence/index.js';
-import { createExampleController } from './adapter/in/web/index.js';
+import { config } from './config/index.js';
+
+// Domain
+import { ExampleService } from './domain/service/index.js';
+
+// Inbound
+import { createExampleController } from './inbound/rest/index.js';
+
+// Outbound
+import { ExampleRepositoryImpl } from './outbound/persistence/index.js';
 
 const app = express();
-const PORT = process.env.PORT || 3000;
 
 // Middleware
 app.use(express.json());
 
+// ══════════════════════════════════════════════════════════════════
 // Dependency Injection: Wire up the hexagonal architecture
-const exampleRepository = new ExamplePersistenceAdapter();
+// ══════════════════════════════════════════════════════════════════
+
+// Outbound adapters (driven)
+const exampleRepository = new ExampleRepositoryImpl();
+
+// Domain services
 const exampleService = new ExampleService(exampleRepository);
+
+// Inbound adapters (driving)
 const exampleController = createExampleController(exampleService);
 
+// ══════════════════════════════════════════════════════════════════
 // Routes
+// ══════════════════════════════════════════════════════════════════
+
 app.use('/api/examples', exampleController);
 
 // Health check
@@ -327,29 +517,19 @@ app.use((err, req, res, next) => {
 });
 
 // Start server
-app.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT}`);
-  console.log(`API available at http://localhost:${PORT}/api/examples`);
+app.listen(config.port, () => {
+  console.log(`Server running on http://localhost:${config.port}`);
+  console.log(`API available at http://localhost:${config.port}/api/examples`);
 });
 '''
         self._write_file(server_path, "src/index.js", index_code)
 
-        # Config placeholder
-        config_code = '''export const config = {
-  port: process.env.PORT || 3000,
-  nodeEnv: process.env.NODE_ENV || 'development',
-};
-'''
-        self._write_file(server_path, "src/infrastructure/config/index.js", config_code)
-
-        print("[green]Generated hexagonal architecture example with Example entity![/green]")
-        print("[dim]  - Domain: Example entity[/dim]")
-        print("[dim]  - Ports: GetExampleUseCase, CreateExampleUseCase, ExampleRepository[/dim]")
-        print("[dim]  - Adapters: ExampleController, ExamplePersistenceAdapter[/dim]")
-        print("[dim]  - Entry: src/index.js with dependency injection[/dim]")
+        print("[green]Generated hexagonal architecture example![/green]")
+        print("[dim]  INBOUND:  dto, rest (Controller), messaging (Consumer), security[/dim]")
+        print("[dim]  DOMAIN:   model (Entity), service, repository, client, messaging (interfaces)[/dim]")
+        print("[dim]  OUTBOUND: persistence (RepoImpl), restclient (ClientImpl), messaging (ProducerImpl)[/dim]")
 
     def _write_file(self, base_path: Path, relative_path: str, content: str) -> None:
-        """Write a file, creating directories as needed."""
         file_path = base_path / relative_path
         file_path.parent.mkdir(parents=True, exist_ok=True)
         with open(file_path, "w") as f:

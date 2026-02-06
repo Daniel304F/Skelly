@@ -1,0 +1,40 @@
+package com.example.testmitjav.outbound.persistence;
+
+import com.example.testmitjav.domain.model.Example;
+import com.example.testmitjav.domain.repository.ExampleRepository;
+import org.springframework.stereotype.Repository;
+
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+
+/**
+ * Repository Implementation (Outbound Adapter) - JPA/In-Memory persistence.
+ * Implements the domain repository interface.
+ */
+@Repository
+public class ExampleRepositoryImpl implements ExampleRepository {
+
+    // In-memory storage (replace with JPA Repository in production)
+    private final Map<UUID, Example> storage = new ConcurrentHashMap<>();
+
+    @Override
+    public Example save(Example example) {
+        storage.put(example.getId(), example);
+        return example;
+    }
+
+    @Override
+    public Optional<Example> findById(UUID id) {
+        return Optional.ofNullable(storage.get(id));
+    }
+
+    @Override
+    public List<Example> findAll() {
+        return new ArrayList<>(storage.values());
+    }
+
+    @Override
+    public void deleteById(UUID id) {
+        storage.remove(id);
+    }
+}
