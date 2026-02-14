@@ -1,0 +1,14 @@
+package com.example.testmitjav.domain.client;
+
+import java.util.Optional;
+
+/**
+ * Service Client Interface (Port) - For calling external web services.
+ * Implementation is in outbound/restclient layer.
+ */
+public interface ExternalServiceClient {
+
+    Optional<String> fetchExternalData(String resourceId);
+
+    void notifyExternalService(String eventType, String payload);
+}

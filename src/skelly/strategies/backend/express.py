@@ -48,44 +48,310 @@ class ExpressBackend(BackendStrategy):
             self._generate_hexagonal_example(config, base_path)
 
     def _generate_hexagonal_example(self, config: ProjectConfig, base_path: Path) -> None:
-        """Generate example code demonstrating hexagonal architecture layers."""
+        """Generate example code with inbound/domain/outbound structure."""
         server_path = base_path / "server"
 
-        print("[cyan]Generating hexagonal architecture example code...[/cyan]")
+        print("[cyan]Generating hexagonal architecture example (inbound/domain/outbound)...[/cyan]")
 
-        template_file_map = {
-            # Domain layer
-            "express/hexagonal/domain/Example.js.j2": "src/domain/model/Example.js",
-            "express/hexagonal/domain/index.js.j2": "src/domain/model/index.js",
-            # Application layer - Ports In
-            "express/hexagonal/application/GetExampleUseCase.js.j2": "src/application/port/in/GetExampleUseCase.js",
-            "express/hexagonal/application/CreateExampleUseCase.js.j2": "src/application/port/in/CreateExampleUseCase.js",
-            "express/hexagonal/application/port_in_index.js.j2": "src/application/port/in/index.js",
-            # Application layer - Ports Out
-            "express/hexagonal/application/ExampleRepository.js.j2": "src/application/port/out/ExampleRepository.js",
-            "express/hexagonal/application/port_out_index.js.j2": "src/application/port/out/index.js",
-            # Application layer - Service
-            "express/hexagonal/application/ExampleService.js.j2": "src/application/service/ExampleService.js",
-            "express/hexagonal/application/service_index.js.j2": "src/application/service/index.js",
-            # Adapter layer - Web (Input)
-            "express/hexagonal/adapter/ExampleController.js.j2": "src/adapter/in/web/ExampleController.js",
-            "express/hexagonal/adapter/web_index.js.j2": "src/adapter/in/web/index.js",
-            # Adapter layer - Persistence (Output)
-            "express/hexagonal/adapter/ExamplePersistenceAdapter.js.j2": "src/adapter/out/persistence/ExamplePersistenceAdapter.js",
-            "express/hexagonal/adapter/persistence_index.js.j2": "src/adapter/out/persistence/index.js",
-            # Infrastructure
-            "express/hexagonal/index.js.j2": "src/index.js",
-            "express/hexagonal/config_index.js.j2": "src/infrastructure/config/index.js",
-        }
+        # === DOMAIN LAYER ===
 
-        for template, output in template_file_map.items():
-            render_to_file(template, server_path / output)
+        # Domain Model: Example Entity
+        entity_code = '''import { randomUUID } from 'crypto';
+
+export class Example {
+  constructor(id, name, description) {
+    this.id = id;
+    this.name = name;
+    this.description = description;
+  }
+
+  static create(name, description) {
+    return new Example(randomUUID(), name, description);
+  }
+
+  update(name, description) {
+    this.name = name;
+    this.description = description;
+  }
+}
+'''
+        self._write_file(server_path, "src/domain/model/Example.js", entity_code)
+
+        # Domain Model index
+        domain_model_index = '''export { Example } from './Example.js';
+'''
+        self._write_file(server_path, "src/domain/model/index.js", domain_model_index)
+
+        # === APPLICATION LAYER - PORTS ===
+
+        # Input Port: GetExampleUseCase
+        get_usecase_code = '''/**
+ * Input Port: Query use cases for Example
+ * @interface GetExampleUseCase
+ */
+export class GetExampleUseCase {
+  constructor(exampleRepository) {
+    this.exampleRepository = exampleRepository;
+  }
+
+  async getById(id) {
+    return this.exampleRepository.findById(id);
+  }
+
+  async getAll() {
+    return this.exampleRepository.findAll();
+  }
+}
+'''
+        self._write_file(server_path, "src/application/port/in/GetExampleUseCase.js", get_usecase_code)
+
+        # Input Port: CreateExampleUseCase
+        create_usecase_code = '''import { Example } from '../../../domain/model/index.js';
+
+/**
+ * Input Port: Command use cases for Example
+ * @interface CreateExampleUseCase
+ */
+export class CreateExampleUseCase {
+  constructor(exampleRepository) {
+    this.exampleRepository = exampleRepository;
+  }
+
+  async create(command) {
+    const example = Example.create(command.name, command.description);
+    return this.exampleRepository.save(example);
+  }
+}
+'''
+        self._write_file(server_path, "src/application/port/in/CreateExampleUseCase.js", create_usecase_code)
+
+        # Port index
+        port_in_index = '''export { GetExampleUseCase } from './GetExampleUseCase.js';
+export { CreateExampleUseCase } from './CreateExampleUseCase.js';
+'''
+        self._write_file(server_path, "src/application/port/in/index.js", port_in_index)
+
+        # Output Port: ExampleRepository (Interface documentation)
+        repository_port_code = '''/**
+ * Output Port: Repository interface for Example persistence
+ *
+ * Implementations must provide:
+ * - save(example): Promise<Example>
+ * - findById(id): Promise<Example|null>
+ * - findAll(): Promise<Example[]>
+ * - deleteById(id): Promise<void>
+ */
+export const ExampleRepositoryPort = {
+  save: async (example) => { throw new Error('Not implemented'); },
+  findById: async (id) => { throw new Error('Not implemented'); },
+  findAll: async () => { throw new Error('Not implemented'); },
+  deleteById: async (id) => { throw new Error('Not implemented'); },
+};
+'''
+        self._write_file(server_path, "src/application/port/out/ExampleRepository.js", repository_port_code)
+
+        port_out_index = '''export { ExampleRepositoryPort } from './ExampleRepository.js';
+'''
+        self._write_file(server_path, "src/application/port/out/index.js", port_out_index)
+
+        # === APPLICATION LAYER - SERVICE ===
+
+        # Application Service
+        app_service_code = '''import { GetExampleUseCase, CreateExampleUseCase } from '../port/in/index.js';
+
+/**
+ * Application Service: Orchestrates use cases
+ * Combines multiple use case implementations
+ */
+export class ExampleService {
+  constructor(exampleRepository) {
+    this.getExampleUseCase = new GetExampleUseCase(exampleRepository);
+    this.createExampleUseCase = new CreateExampleUseCase(exampleRepository);
+  }
+
+  async getById(id) {
+    return this.getExampleUseCase.getById(id);
+  }
+
+  async getAll() {
+    return this.getExampleUseCase.getAll();
+  }
+
+  async create(command) {
+    return this.createExampleUseCase.create(command);
+  }
+}
+'''
+        self._write_file(server_path, "src/application/service/ExampleService.js", app_service_code)
+
+        service_index = '''export { ExampleService } from './ExampleService.js';
+'''
+        self._write_file(server_path, "src/application/service/index.js", service_index)
+
+        # === ADAPTER LAYER - WEB (INPUT) ===
+
+        # REST Controller
+        controller_code = '''import { Router } from 'express';
+
+/**
+ * Input Adapter: REST Controller for Example
+ * Handles HTTP requests and delegates to use cases
+ */
+export function createExampleController(exampleService) {
+  const router = Router();
+
+  // GET /api/examples
+  router.get('/', async (req, res, next) => {
+    try {
+      const examples = await exampleService.getAll();
+      res.json(examples.map(toResponse));
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  // GET /api/examples/:id
+  router.get('/:id', async (req, res, next) => {
+    try {
+      const example = await exampleService.getById(req.params.id);
+      if (!example) {
+        return res.status(404).json({ error: 'Example not found' });
+      }
+      res.json(toResponse(example));
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  // POST /api/examples
+  router.post('/', async (req, res, next) => {
+    try {
+      const { name, description } = req.body;
+      const command = { name, description };
+      const created = await exampleService.create(command);
+      res.status(201).json(toResponse(created));
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  return router;
+}
+
+// DTO transformation
+function toResponse(example) {
+  return {
+    id: example.id,
+    name: example.name,
+    description: example.description,
+  };
+}
+'''
+        self._write_file(server_path, "src/adapter/in/web/ExampleController.js", controller_code)
+
+        web_index = '''export { createExampleController } from './ExampleController.js';
+'''
+        self._write_file(server_path, "src/adapter/in/web/index.js", web_index)
+
+        # === ADAPTER LAYER - PERSISTENCE (OUTPUT) ===
+
+        # In-Memory Repository Implementation
+        persistence_adapter_code = '''import { Example } from '../../../domain/model/index.js';
+
+/**
+ * Output Adapter: In-Memory Repository
+ * Implements ExampleRepository port
+ */
+export class ExamplePersistenceAdapter {
+  constructor() {
+    this.storage = new Map();
+  }
+
+  async save(example) {
+    this.storage.set(example.id, example);
+    return example;
+  }
+
+  async findById(id) {
+    return this.storage.get(id) || null;
+  }
+
+  async findAll() {
+    return Array.from(this.storage.values());
+  }
+
+  async deleteById(id) {
+    this.storage.delete(id);
+  }
+}
+'''
+        self._write_file(server_path, "src/adapter/out/persistence/ExamplePersistenceAdapter.js", persistence_adapter_code)
+
+        persistence_index = '''export { ExamplePersistenceAdapter } from './ExamplePersistenceAdapter.js';
+'''
+        self._write_file(server_path, "src/adapter/out/persistence/index.js", persistence_index)
+
+        # === INFRASTRUCTURE ===
+
+        # Main Application Entry Point
+        index_code = '''import express from 'express';
+import { ExampleService } from './application/service/index.js';
+import { ExamplePersistenceAdapter } from './adapter/out/persistence/index.js';
+import { createExampleController } from './adapter/in/web/index.js';
+
+const app = express();
+const PORT = process.env.PORT || 3000;
+
+// Middleware
+app.use(express.json());
+
+// Dependency Injection: Wire up the hexagonal architecture
+const exampleRepository = new ExamplePersistenceAdapter();
+const exampleService = new ExampleService(exampleRepository);
+const exampleController = createExampleController(exampleService);
+
+// Routes
+app.use('/api/examples', exampleController);
+
+// Health check
+app.get('/health', (req, res) => {
+  res.json({ status: 'ok' });
+});
+
+// Error handling middleware
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).json({ error: 'Internal Server Error' });
+});
+
+// Start server
+app.listen(PORT, () => {
+  console.log(`Server running on http://localhost:${PORT}`);
+  console.log(`API available at http://localhost:${PORT}/api/examples`);
+});
+'''
+        self._write_file(server_path, "src/index.js", index_code)
+
+        # Config placeholder
+        config_code = '''export const config = {
+  port: process.env.PORT || 3000,
+  nodeEnv: process.env.NODE_ENV || 'development',
+};
+'''
+        self._write_file(server_path, "src/infrastructure/config/index.js", config_code)
 
         print("[green]Generated hexagonal architecture example with Example entity![/green]")
         print("[dim]  - Domain: Example entity[/dim]")
         print("[dim]  - Ports: GetExampleUseCase, CreateExampleUseCase, ExampleRepository[/dim]")
         print("[dim]  - Adapters: ExampleController, ExamplePersistenceAdapter[/dim]")
         print("[dim]  - Entry: src/index.js with dependency injection[/dim]")
+
+    def _write_file(self, base_path: Path, relative_path: str, content: str) -> None:
+        """Write a file, creating directories as needed."""
+        file_path = base_path / relative_path
+        file_path.parent.mkdir(parents=True, exist_ok=True)
+        with open(file_path, "w") as f:
+            f.write(content)
 
     def install_dependencies(self, base_path: Path) -> None:
         server_path = base_path / "server"

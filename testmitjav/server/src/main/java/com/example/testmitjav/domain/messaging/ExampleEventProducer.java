@@ -1,0 +1,12 @@
+package com.example.testmitjav.domain.messaging;
+
+/**
+ * Message Producer Interface (Port) - For publishing events.
+ * Implementation is in outbound/messaging layer (e.g., RabbitMQ).
+ */
+public interface ExampleEventProducer {
+
+    void publishExampleCreated(String exampleId, String name);
+
+    void publishExampleDeleted(String exampleId);
+}
