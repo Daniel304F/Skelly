@@ -1,0 +1,40 @@
+package {{ package }}.domain.service;
+
+import {{ package }}.domain.model.Example;
+import {{ package }}.domain.repository.ExampleRepository;
+import org.springframework.stereotype.Service;
+
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+
+/**
+ * Domain Service - Contains business logic.
+ * Uses repository interfaces (ports) for data access.
+ */
+@Service
+public class ExampleService {
+
+    private final ExampleRepository exampleRepository;
+
+    public ExampleService(ExampleRepository exampleRepository) {
+        this.exampleRepository = exampleRepository;
+    }
+
+    public Example createExample(String name, String description) {
+        Example example = Example.create(name, description);
+        return exampleRepository.save(example);
+    }
+
+    public Optional<Example> findById(UUID id) {
+        return exampleRepository.findById(id);
+    }
+
+    public List<Example> findAll() {
+        return exampleRepository.findAll();
+    }
+
+    public void deleteById(UUID id) {
+        exampleRepository.deleteById(id);
+    }
+}

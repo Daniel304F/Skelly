@@ -1,7 +1,11 @@
+import logging
+import subprocess
 from abc import ABC, abstractmethod
-from typing import List
 from pathlib import Path
+
 from skelly.core.models import ProjectConfig
+
+logger = logging.getLogger(__name__)
 
 
 class ArchitectureStrategy(ABC):
@@ -11,7 +15,7 @@ class ArchitectureStrategy(ABC):
     """
 
     @abstractmethod
-    def get_folders(self) -> List[str]:
+    def get_folders(self) -> list[str]:
         """Return the list of folders that define this architecture."""
         pass
 
@@ -28,7 +32,7 @@ class BackendStrategy(ABC):
     """
 
     @abstractmethod
-    def get_folders(self) -> List[str]:
+    def get_folders(self) -> list[str]:
         """Return backend-specific folders (e.g., src/main/resources for Java)."""
         pass
 
@@ -39,17 +43,34 @@ class BackendStrategy(ABC):
 
     @abstractmethod
     def create_config_files(self, config: ProjectConfig, base_path: Path) -> None:
-        """
-        Create configuration files (pom.xml, package.json, requirements.txt).
-        """
+        """Create configuration files (pom.xml, package.json, requirements.txt)."""
         pass
 
     @abstractmethod
     def install_dependencies(self, base_path: Path) -> None:
-        """
-        Install dependencies using the appropriate package manager.
-        """
+        """Install dependencies using the appropriate package manager."""
         pass
+
+    @staticmethod
+    def _run_command(
+        cmd: list[str],
+        cwd: Path,
+        success_msg: str,
+        fail_msg: str,
+    ) -> None:
+        """Run a shell command with standardized error handling."""
+        try:
+            subprocess.run(cmd, cwd=cwd, shell=True, check=True)
+            print(f"[green]{success_msg}[/green]")
+        except subprocess.CalledProcessError as e:
+            logger.warning("Command %s failed with exit code %s", cmd, e.returncode)
+            print(f"[red]{fail_msg}[/red]")
+        except FileNotFoundError:
+            logger.error("Command not found: %s", cmd[0])
+            print(f"[red]{fail_msg}[/red]")
+        except Exception as e:
+            logger.exception("Unexpected error running %s", cmd)
+            print(f"[red]Error: {e}[/red]")
 
 
 class FrontendStrategy(ABC):
@@ -58,7 +79,7 @@ class FrontendStrategy(ABC):
     """
 
     @abstractmethod
-    def get_folders(self) -> List[str]:
+    def get_folders(self) -> list[str]:
         """Return frontend-specific folders (e.g., src/components, src/hooks)."""
         pass
 
@@ -69,14 +90,22 @@ class FrontendStrategy(ABC):
 
     @abstractmethod
     def create_config_files(self, config: ProjectConfig, base_path: Path) -> None:
-        """
-        Create frontend configuration files (package.json, vite.config.js, etc.).
-        """
+        """Create frontend configuration files (package.json, vite.config.js, etc.)."""
         pass
 
-    @abstractmethod
     def install_dependencies(self, base_path: Path) -> None:
-        """
-        Install frontend dependencies using npm/yarn/pnpm.
-        """
-        pass
+        """Install frontend dependencies via npm."""
+        frontend_path = base_path / "frontend"
+        print("[yellow]Running npm install for frontend...[/yellow]")
+        try:
+            subprocess.run(["npm", "install"], cwd=frontend_path, shell=True, check=True)
+            print("[green]Frontend dependencies installed![/green]")
+        except subprocess.CalledProcessError as e:
+            logger.warning("npm install failed with exit code %s", e.returncode)
+            print("[red]Failed to install frontend dependencies. Do you have 'npm' installed?[/red]")
+        except FileNotFoundError:
+            logger.error("npm command not found")
+            print("[red]Failed to install frontend dependencies. Do you have 'npm' installed?[/red]")
+        except Exception as e:
+            logger.exception("Unexpected error during frontend installation")
+            print(f"[red]Error during frontend installation: {e}[/red]")

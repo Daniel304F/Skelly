@@ -1,0 +1,58 @@
+package {{ package }}.inbound.rest;
+
+import {{ package }}.domain.model.Example;
+import {{ package }}.domain.service.ExampleService;
+import {{ package }}.inbound.dto.ExampleRequest;
+import {{ package }}.inbound.dto.ExampleResponse;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+import java.util.UUID;
+
+/**
+ * REST Controller (Inbound Adapter) - Handles HTTP requests.
+ * Converts DTOs to domain objects and delegates to domain service.
+ */
+@RestController
+@RequestMapping("/api/examples")
+public class ExampleController {
+
+    private final ExampleService exampleService;
+
+    public ExampleController(ExampleService exampleService) {
+        this.exampleService = exampleService;
+    }
+
+    @GetMapping
+    public ResponseEntity<List<ExampleResponse>> getAll() {
+        List<ExampleResponse> responses = exampleService.findAll()
+                .stream()
+                .map(ExampleResponse::from)
+                .toList();
+        return ResponseEntity.ok(responses);
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<ExampleResponse> getById(@PathVariable UUID id) {
+        return exampleService.findById(id)
+                .map(ExampleResponse::from)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    @PostMapping
+    public ResponseEntity<ExampleResponse> create(@RequestBody ExampleRequest request) {
+        Example created = exampleService.createExample(
+                request.name(),
+                request.description()
+        );
+        return ResponseEntity.ok(ExampleResponse.from(created));
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> delete(@PathVariable UUID id) {
+        exampleService.deleteById(id);
+        return ResponseEntity.noContent().build();
+    }
+}

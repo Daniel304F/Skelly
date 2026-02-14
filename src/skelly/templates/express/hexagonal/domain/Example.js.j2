@@ -1,0 +1,18 @@
+import { randomUUID } from 'crypto';
+
+export class Example {
+  constructor(id, name, description) {
+    this.id = id;
+    this.name = name;
+    this.description = description;
+  }
+
+  static create(name, description) {
+    return new Example(randomUUID(), name, description);
+  }
+
+  update(name, description) {
+    this.name = name;
+    this.description = description;
+  }
+}

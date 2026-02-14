@@ -1,0 +1,15 @@
+/**
+ * Output Port: Repository interface for Example persistence
+ *
+ * Implementations must provide:
+ * - save(example): Promise<Example>
+ * - findById(id): Promise<Example|null>
+ * - findAll(): Promise<Example[]>
+ * - deleteById(id): Promise<void>
+ */
+export const ExampleRepositoryPort = {
+  save: async (example) => { throw new Error('Not implemented'); },
+  findById: async (id) => { throw new Error('Not implemented'); },
+  findAll: async () => { throw new Error('Not implemented'); },
+  deleteById: async (id) => { throw new Error('Not implemented'); },
+};

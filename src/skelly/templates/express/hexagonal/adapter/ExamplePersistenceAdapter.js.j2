@@ -1,0 +1,28 @@
+import { Example } from '../../../domain/model/index.js';
+
+/**
+ * Output Adapter: In-Memory Repository
+ * Implements ExampleRepository port
+ */
+export class ExamplePersistenceAdapter {
+  constructor() {
+    this.storage = new Map();
+  }
+
+  async save(example) {
+    this.storage.set(example.id, example);
+    return example;
+  }
+
+  async findById(id) {
+    return this.storage.get(id) || null;
+  }
+
+  async findAll() {
+    return Array.from(this.storage.values());
+  }
+
+  async deleteById(id) {
+    this.storage.delete(id);
+  }
+}

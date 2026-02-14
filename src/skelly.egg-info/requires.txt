@@ -1,3 +1,6 @@
 questionary
 jinja2
 rich
+
+[dev]
+pytest>=7.0

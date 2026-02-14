@@ -2,124 +2,102 @@ import questionary
 from rich.console import Console
 
 from skelly.core.builder import ProjectBuilder
+from skelly.core.models import Architecture, BackendStack, FrontendStack
+from skelly.factories.base import StrategyFactory
 from skelly.factories.frontend_factory import FrontendFactory
 from skelly.factories.backend_factory import BackendFactory
 
-# Architecture strategies
-from skelly.strategies.architecture import (
-    HexagonalArchitecture,
-    LayeredArchitecture,
-    CustomArchitecture
-)
-
-# Backend strategies
-from skelly.strategies.backend import (
-    JavaSpringBackend,
-    ExpressBackend,
-    DjangoBackend
-)
-
-# Frontend strategies
-from skelly.strategies.frontend import (
-    ReactFrontend,
-    LitFrontend,
-    AngularFrontend
-)
-
 console = Console()
+
+
+def _ask_project_name() -> str | None:
+    project_name = questionary.text("Enter the project name:").ask()
+    if not project_name:
+        console.print("[red]Project name is required.[/red]")
+        return None
+    return project_name
+
+
+def _ask_stacks() -> tuple[FrontendStack, BackendStack]:
+    frontend_value = questionary.select(
+        "Choose a frontend stack:",
+        choices=[
+            questionary.Choice(s.value, value=s) for s in FrontendStack
+        ],
+    ).ask()
+
+    backend_value = questionary.select(
+        "Choose a backend stack:",
+        choices=[
+            questionary.Choice(s.value, value=s) for s in BackendStack
+        ],
+    ).ask()
+
+    return frontend_value, backend_value
+
+
+def _ask_libraries(
+    frontend_stack: FrontendStack, backend_stack: BackendStack
+) -> tuple[list[str], list[str]]:
+    frontend_libs = []
+    if frontend_stack != FrontendStack.NONE:
+        frontend_libs = questionary.checkbox(
+            f"Select libraries for {frontend_stack.value}:",
+            choices=FrontendFactory.get_supported_libraries(frontend_stack),
+        ).ask() or []
+
+    backend_libs = questionary.checkbox(
+        f"Select libraries for {backend_stack.value}:",
+        choices=BackendFactory.get_supported_libraries(backend_stack),
+    ).ask() or []
+
+    return frontend_libs, backend_libs
+
+
+def _ask_architecture() -> tuple[str, list[str] | None]:
+    arch_options = [
+        questionary.Choice(Architecture.HEXAGONAL.value, value="hexagonal"),
+        questionary.Choice(Architecture.LAYERED.value, value="layered"),
+        questionary.Choice("Custom Structure", value="custom"),
+    ]
+
+    choice = questionary.select(
+        "Choose an architecture pattern:",
+        choices=arch_options,
+    ).ask()
+
+    custom_folders = None
+    if choice == "custom":
+        console.print("[yellow]Please enter folder paths separated by commas.[/yellow]")
+        console.print("[dim]Example: src/controllers, src/models, utils[/dim]")
+        folders_input = questionary.text("Enter folders:").ask()
+        custom_folders = [f.strip() for f in folders_input.split(",") if f.strip()]
+
+    return choice, custom_folders
 
 
 def main() -> None:
     console.print("[bold green]Welcome to the Skelly CLI![/bold green]")
     console.print("[dim]Project scaffolding with separated concerns[/dim]\n")
 
-    # Project metadata
-    project_name = questionary.text("Enter the project name:").ask()
+    project_name = _ask_project_name()
     if not project_name:
-        console.print("[red]Project name is required.[/red]")
         return
 
-    # Stack selection
-    frontend_stack = questionary.select(
-        "Choose a frontend stack:",
-        choices=["React", "Lit", "Angular", "None (Backend only)"]
-    ).ask()
+    frontend_stack, backend_stack = _ask_stacks()
+    frontend_libs, backend_libs = _ask_libraries(frontend_stack, backend_stack)
+    arch_choice, custom_folders = _ask_architecture()
 
-    backend_stack = questionary.select(
-        "Choose a backend stack:",
-        choices=["Java", "Express", "Django"]
-    ).ask()
+    architecture_strategy = StrategyFactory.create_architecture(
+        arch_choice, project_name, backend_stack, custom_folders
+    )
+    backend_strategy = StrategyFactory.create_backend(backend_stack, project_name)
+    frontend_strategy = StrategyFactory.create_frontend(frontend_stack)
 
-    # Library selection
-    frontend_libs = []
-    if frontend_stack != "None (Backend only)":
-        frontend_libs = questionary.checkbox(
-            f"Select libraries for {frontend_stack}:",
-            choices=FrontendFactory.get_supported_libraries(frontend_stack)
-        ).ask() or []
-
-    backend_libs = questionary.checkbox(
-        f"Select libraries for {backend_stack}:",
-        choices=BackendFactory.get_supported_libraries(backend_stack)
-    ).ask() or []
-
-    # Architecture selection (independent of backend!)
-    arch_options = [
-        questionary.Choice("Hexagonal Architecture", value="hexagonal"),
-        questionary.Choice("Layered Architecture", value="layered"),
-        questionary.Choice("Custom Structure", value="custom")
-    ]
-
-    architecture_choice = questionary.select(
-        "Choose an architecture pattern:",
-        choices=arch_options
-    ).ask()
-
-    # Create architecture strategy
-    architecture_strategy = None
-
-    if architecture_choice == "custom":
-        console.print("[yellow]Please enter folder paths separated by commas.[/yellow]")
-        console.print("[dim]Example: src/controllers, src/models, utils[/dim]")
-
-        folders_input = questionary.text("Enter folders:").ask()
-        folder_list = [f.strip() for f in folders_input.split(",") if f.strip()]
-        architecture_strategy = CustomArchitecture(folder_list)
-
-    elif architecture_choice == "hexagonal":
-        base_package = "src"
-        if backend_stack == "Java":
-            base_package = "java"
-        architecture_strategy = HexagonalArchitecture(project_name, base_package)
-
-    elif architecture_choice == "layered":
-        architecture_strategy = LayeredArchitecture()
-
-    # Create backend strategy
-    backend_strategy = None
-
-    if backend_stack == "Java":
-        backend_strategy = JavaSpringBackend(project_name)
-    elif backend_stack == "Express":
-        backend_strategy = ExpressBackend()
-    elif backend_stack == "Django":
-        backend_strategy = DjangoBackend()
-
-    # Create frontend strategy
-    frontend_strategy = None
-
-    if frontend_stack == "React":
-        frontend_strategy = ReactFrontend()
-    elif frontend_stack == "Lit":
-        frontend_strategy = LitFrontend()
-    elif frontend_stack == "Angular":
-        frontend_strategy = AngularFrontend()
-
-    # Build the project
     builder = ProjectBuilder()
     builder.set_meta_data(project_name)\
-           .set_frontend_stack(frontend_stack)\
-           .set_backend_stack(backend_stack)\
+           .set_frontend_stack(frontend_stack.value)\
+           .set_backend_stack(backend_stack.value)\
            .set_architecture(architecture_strategy.get_name())\
            .add_frontend_libraries(frontend_libs)\
            .add_backend_libraries(backend_libs)\

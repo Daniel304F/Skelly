@@ -1,5 +1,3 @@
-from typing import List
-
 from skelly.strategies.base import ArchitectureStrategy
 
 
@@ -12,7 +10,7 @@ class LayeredArchitecture(ArchitectureStrategy):
     def __init__(self, base_path: str = "src"):
         self.base_path = base_path
 
-    def get_folders(self) -> List[str]:
+    def get_folders(self) -> list[str]:
         base = f"server/{self.base_path}"
         return [
             f"{base}/api/routes",

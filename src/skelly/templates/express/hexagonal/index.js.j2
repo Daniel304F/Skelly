@@ -1,0 +1,35 @@
+import express from 'express';
+import { ExampleService } from './application/service/index.js';
+import { ExamplePersistenceAdapter } from './adapter/out/persistence/index.js';
+import { createExampleController } from './adapter/in/web/index.js';
+
+const app = express();
+const PORT = process.env.PORT || 3000;
+
+// Middleware
+app.use(express.json());
+
+// Dependency Injection: Wire up the hexagonal architecture
+const exampleRepository = new ExamplePersistenceAdapter();
+const exampleService = new ExampleService(exampleRepository);
+const exampleController = createExampleController(exampleService);
+
+// Routes
+app.use('/api/examples', exampleController);
+
+// Health check
+app.get('/health', (req, res) => {
+  res.json({ status: 'ok' });
+});
+
+// Error handling middleware
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).json({ error: 'Internal Server Error' });
+});
+
+// Start server
+app.listen(PORT, () => {
+  console.log(`Server running on http://localhost:${PORT}`);
+  console.log(`API available at http://localhost:${PORT}/api/examples`);
+});

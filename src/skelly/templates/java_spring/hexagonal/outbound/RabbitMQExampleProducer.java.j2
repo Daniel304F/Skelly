@@ -1,0 +1,32 @@
+package {{ package }}.outbound.messaging;
+
+import {{ package }}.domain.messaging.ExampleEventProducer;
+import org.springframework.stereotype.Component;
+
+/**
+ * Message Producer Implementation (Outbound Adapter) - Publishes events to message broker.
+ * Implements the domain messaging interface.
+ * Example: RabbitMQ with RabbitTemplate
+ */
+@Component
+public class RabbitMQExampleProducer implements ExampleEventProducer {
+
+    // @Autowired
+    // private RabbitTemplate rabbitTemplate;
+
+    private static final String EXCHANGE = "example.exchange";
+
+    @Override
+    public void publishExampleCreated(String exampleId, String name) {
+        String message = String.format("{\"event\":\"CREATED\",\"id\":\"%s\",\"name\":\"%s\"}", exampleId, name);
+        // rabbitTemplate.convertAndSend(EXCHANGE, "example.created", message);
+        System.out.println("Published event: " + message);
+    }
+
+    @Override
+    public void publishExampleDeleted(String exampleId) {
+        String message = String.format("{\"event\":\"DELETED\",\"id\":\"%s\"}", exampleId);
+        // rabbitTemplate.convertAndSend(EXCHANGE, "example.deleted", message);
+        System.out.println("Published event: " + message);
+    }
+}

@@ -1,0 +1,17 @@
+/**
+ * Input Port: Query use cases for Example
+ * @interface GetExampleUseCase
+ */
+export class GetExampleUseCase {
+  constructor(exampleRepository) {
+    this.exampleRepository = exampleRepository;
+  }
+
+  async getById(id) {
+    return this.exampleRepository.findById(id);
+  }
+
+  async getAll() {
+    return this.exampleRepository.findAll();
+  }
+}

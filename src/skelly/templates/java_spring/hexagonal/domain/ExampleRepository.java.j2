@@ -1,0 +1,21 @@
+package {{ package }}.domain.repository;
+
+import {{ package }}.domain.model.Example;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+
+/**
+ * Repository Interface (Port) - Defines data access contract.
+ * Implementation is in outbound/persistence layer.
+ */
+public interface ExampleRepository {
+
+    Example save(Example example);
+
+    Optional<Example> findById(UUID id);
+
+    List<Example> findAll();
+
+    void deleteById(UUID id);
+}

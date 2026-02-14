@@ -1,0 +1,55 @@
+import { Router } from 'express';
+
+/**
+ * Input Adapter: REST Controller for Example
+ * Handles HTTP requests and delegates to use cases
+ */
+export function createExampleController(exampleService) {
+  const router = Router();
+
+  // GET /api/examples
+  router.get('/', async (req, res, next) => {
+    try {
+      const examples = await exampleService.getAll();
+      res.json(examples.map(toResponse));
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  // GET /api/examples/:id
+  router.get('/:id', async (req, res, next) => {
+    try {
+      const example = await exampleService.getById(req.params.id);
+      if (!example) {
+        return res.status(404).json({ error: 'Example not found' });
+      }
+      res.json(toResponse(example));
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  // POST /api/examples
+  router.post('/', async (req, res, next) => {
+    try {
+      const { name, description } = req.body;
+      const command = { name, description };
+      const created = await exampleService.create(command);
+      res.status(201).json(toResponse(created));
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  return router;
+}
+
+// DTO transformation
+function toResponse(example) {
+  return {
+    id: example.id,
+    name: example.name,
+    description: example.description,
+  };
+}

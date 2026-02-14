@@ -1,0 +1,24 @@
+import { GetExampleUseCase, CreateExampleUseCase } from '../port/in/index.js';
+
+/**
+ * Application Service: Orchestrates use cases
+ * Combines multiple use case implementations
+ */
+export class ExampleService {
+  constructor(exampleRepository) {
+    this.getExampleUseCase = new GetExampleUseCase(exampleRepository);
+    this.createExampleUseCase = new CreateExampleUseCase(exampleRepository);
+  }
+
+  async getById(id) {
+    return this.getExampleUseCase.getById(id);
+  }
+
+  async getAll() {
+    return this.getExampleUseCase.getAll();
+  }
+
+  async create(command) {
+    return this.createExampleUseCase.create(command);
+  }
+}

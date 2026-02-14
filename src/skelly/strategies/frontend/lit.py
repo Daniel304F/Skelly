@@ -1,6 +1,4 @@
 import json
-import subprocess
-from typing import List
 from pathlib import Path
 
 from skelly.strategies.base import FrontendStrategy
@@ -10,11 +8,11 @@ from skelly.core.models import ProjectConfig
 class LitFrontend(FrontendStrategy):
     """Lit web components frontend with Vite and npm."""
 
-    def get_folders(self) -> List[str]:
+    def get_folders(self) -> list[str]:
         return [
             "frontend/src/components",
             "frontend/src/styles",
-            "frontend/public"
+            "frontend/public",
         ]
 
     def get_name(self) -> str:
@@ -24,14 +22,13 @@ class LitFrontend(FrontendStrategy):
         frontend_path = base_path / "frontend"
 
         dependencies = {
-            "lit": "^3.1.0"
+            "lit": "^3.1.0",
         }
 
         dev_dependencies = {
-            "vite": "^5.0.0"
+            "vite": "^5.0.0",
         }
 
-        # Library entries may contain multiple packages separated by spaces
         for lib_entry in config.frontend_libraries:
             packages = lib_entry.split()
             for pkg in packages:
@@ -45,10 +42,10 @@ class LitFrontend(FrontendStrategy):
             "scripts": {
                 "dev": "vite",
                 "build": "vite build",
-                "preview": "vite preview"
+                "preview": "vite preview",
             },
             "dependencies": dependencies,
-            "devDependencies": dev_dependencies
+            "devDependencies": dev_dependencies,
         }
 
         package_json_path = frontend_path / "package.json"
@@ -88,14 +85,3 @@ export default defineConfig({
             f.write(index_html)
 
         print(f"[cyan]Created Lit frontend config with: {', '.join(dependencies.keys())}[/cyan]")
-
-    def install_dependencies(self, base_path: Path) -> None:
-        frontend_path = base_path / "frontend"
-        print("[yellow]Running npm install for frontend...[/yellow]")
-        try:
-            subprocess.run(["npm", "install"], cwd=frontend_path, shell=True, check=True)
-            print("[green]Frontend dependencies installed![/green]")
-        except subprocess.CalledProcessError:
-            print("[red]Failed to install frontend dependencies. Do you have 'npm' installed?[/red]")
-        except Exception as e:
-            print(f"[red]Error during frontend installation: {e}[/red]")

@@ -1,0 +1,16 @@
+import { Example } from '../../../domain/model/index.js';
+
+/**
+ * Input Port: Command use cases for Example
+ * @interface CreateExampleUseCase
+ */
+export class CreateExampleUseCase {
+  constructor(exampleRepository) {
+    this.exampleRepository = exampleRepository;
+  }
+
+  async create(command) {
+    const example = Example.create(command.name, command.description);
+    return this.exampleRepository.save(example);
+  }
+}

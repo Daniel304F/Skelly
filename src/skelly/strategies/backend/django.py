@@ -1,5 +1,3 @@
-import subprocess
-from typing import List
 from pathlib import Path
 
 from skelly.strategies.base import BackendStrategy
@@ -9,7 +7,7 @@ from skelly.core.models import ProjectConfig
 class DjangoBackend(BackendStrategy):
     """Django backend with pip."""
 
-    def get_folders(self) -> List[str]:
+    def get_folders(self) -> list[str]:
         return []
 
     def get_name(self) -> str:
@@ -29,13 +27,9 @@ class DjangoBackend(BackendStrategy):
     def install_dependencies(self, base_path: Path) -> None:
         server_path = base_path / "server"
         print("[yellow]Installing server dependencies via pip...[/yellow]")
-        try:
-            subprocess.run(
-                ["pip", "install", "-r", "requirements.txt"],
-                cwd=server_path,
-                shell=True,
-                check=True
-            )
-            print("[green]Django dependencies installed![/green]")
-        except Exception as e:
-            print(f"[red]Error with pip: {e}[/red]")
+        self._run_command(
+            ["pip", "install", "-r", "requirements.txt"],
+            cwd=server_path,
+            success_msg="Django dependencies installed!",
+            fail_msg="Failed to install dependencies. Is 'pip' installed?",
+        )

@@ -1,5 +1,3 @@
-from typing import List
-
 from skelly.strategies.base import ArchitectureStrategy
 
 
@@ -17,7 +15,7 @@ class HexagonalArchitecture(ArchitectureStrategy):
         self.project_name = project_name.lower().replace(" ", "")
         self.base_package = base_package
 
-    def get_folders(self) -> List[str]:
+    def get_folders(self) -> list[str]:
         if self.base_package == "java":
             base = f"server/src/main/java/com/example/{self.project_name}"
         else:

@@ -1,13 +1,32 @@
 from dataclasses import dataclass, field
-from typing import List, Optional
+from enum import Enum
+
+
+class FrontendStack(Enum):
+    REACT = "React"
+    LIT = "Lit"
+    ANGULAR = "Angular"
+    NONE = "None (Backend only)"
+
+
+class BackendStack(Enum):
+    JAVA = "Java"
+    EXPRESS = "Express"
+    DJANGO = "Django"
+
+
+class Architecture(Enum):
+    HEXAGONAL = "Hexagonal Architecture"
+    LAYERED = "Layered Architecture"
+    CUSTOM = "Custom Architecture"
+
 
 @dataclass
 class ProjectConfig:
     name: str
     frontend_stack: str
     backend_stack: str
-    architecture: Optional[str] = None
-    frontend_libraries: List[str] = field(default_factory=list)
-    backend_libraries: List[str] = field(default_factory=list)
+    architecture: str | None = None
+    frontend_libraries: list[str] = field(default_factory=list)
+    backend_libraries: list[str] = field(default_factory=list)
     output_path: str = "./"
-
