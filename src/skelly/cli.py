@@ -1,3 +1,5 @@
+import argparse
+
 import questionary
 from rich.console import Console
 
@@ -76,9 +78,27 @@ def _ask_architecture() -> tuple[str, list[str] | None]:
     return choice, custom_folders
 
 
+def _parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(
+        prog="skelly",
+        description="Project scaffolding with separated concerns",
+    )
+    parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Preview the project structure without creating any files",
+    )
+    return parser.parse_args()
+
+
 def main() -> None:
+    args = _parse_args()
+
     console.print("[bold green]Welcome to the Skelly CLI![/bold green]")
     console.print("[dim]Project scaffolding with separated concerns[/dim]\n")
+
+    if args.dry_run:
+        console.print("[yellow]Running in dry-run mode — no files will be created.[/yellow]\n")
 
     project_name = _ask_project_name()
     if not project_name:
@@ -94,7 +114,7 @@ def main() -> None:
     backend_strategy = StrategyFactory.create_backend(backend_stack, project_name)
     frontend_strategy = StrategyFactory.create_frontend(frontend_stack)
 
-    builder = ProjectBuilder()
+    builder = ProjectBuilder(dry_run=args.dry_run)
     builder.set_meta_data(project_name)\
            .set_frontend_stack(frontend_stack.value)\
            .set_backend_stack(backend_stack.value)\
@@ -107,7 +127,8 @@ def main() -> None:
 
     builder.build()
 
-    console.print("\n[bold green]Project scaffolding complete![/bold green]")
+    if not args.dry_run:
+        console.print("\n[bold green]Project scaffolding complete![/bold green]")
 
 
 if __name__ == "__main__":

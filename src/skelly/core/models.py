@@ -21,12 +21,12 @@ class Architecture(Enum):
     CUSTOM = "Custom Architecture"
 
 
-@dataclass
+@dataclass(frozen=True)
 class ProjectConfig:
     name: str
     frontend_stack: str
     backend_stack: str
     architecture: str | None = None
-    frontend_libraries: list[str] = field(default_factory=list)
-    backend_libraries: list[str] = field(default_factory=list)
+    frontend_libraries: tuple[str, ...] = ()
+    backend_libraries: tuple[str, ...] = ()
     output_path: str = "./"
